@@ -1493,35 +1493,30 @@ INVENTORY = {
 		})
 	end,
 	CreateItemWithNoMeta = function(self, Owner, Name, Count, Slot, MetaData, invType, isRecurse)
-		if not Count or not tonumber(Count) or Count <= 0 then
-			Count = 1
-		end
-
-		local itemExist = itemsDatabase[Name]
-		if itemExist then
-			local p = promise.new()
-
-			if
-				not itemExist.isStackable and Count > 1
-				or Count > 50
-				or (type(itemExist.isStackable) == "number" and Count > itemExist.isStackable and itemExist.isStackable > 0)
-			then
-				while
-					not itemExist.isStackable and itemExist.isStackable ~= -1 and Count > 1
-					or Count > 50
-					or (type(itemExist.isStackable) == "number" and Count > itemExist.isStackable and itemExist.isStackable > 0)
-				do
-					local s = Count > 50 and 50 or itemExist.isStackable or 1
-					self:CreateItemWithNoMeta(Owner, Name, Count, Slot, MetaData, invType, true)
-					Count = Count - s
-				end
-			end
-
-			return Inventory:AddSlot(Owner, Name, Count, MetaData, Slot, invType)
-		else
-			return false
-		end
-	end,
+        if not Count or not tonumber(Count) or Count <= 0 then
+            Count = 1
+        end
+    
+        local itemExist = itemsDatabase[Name]
+        if itemExist then
+            if not isRecurse then
+                if (not itemExist.isStackable and Count > 1)
+                    or Count > 50
+                    or (type(itemExist.isStackable) == "number" and Count > itemExist.isStackable and itemExist.isStackable > 0)
+                then
+                    while Count > 0 do
+                        local s = math.min(Count, (type(itemExist.isStackable) == "number" and itemExist.isStackable > 0) and itemExist.isStackable or 50)
+                        self:CreateItemWithNoMeta(Owner, Name, s, Slot, MetaData, invType, true)
+                        Count = Count - s
+                    end
+                    return true
+                end
+            end
+            return Inventory:AddSlot(Owner, Name, Count, MetaData, Slot, invType)
+        else
+            return false
+        end
+    end,
 	CreateItem = function(self, Owner, Name, Count, Slot, md, invType, isRecurse, forceCreateDate, quality)
 		local MetaData = table.copy(md or {})
 
